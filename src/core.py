@@ -28,37 +28,6 @@ class Boundary(Enum):
     MUR=0
     BARE=0
 
-class SourcePositionNotValid(Exception):
-    """
-    Exception raised when the source is specified in a position that is not allowed,
-    e.g. at a boundary or outside the domain
-    
-    Attributes:
-        source_position -- input source position which caused the error
-        domain_size -- size of the domain 
-    """    
-    def __init__(self, source_position, domain_size):
-        self.source_position = source_position
-        self.domain_size = domain_size
-        self.message = "source position %d is outside the valid positions of [1:(N-1)] i.e. [1:%d]"%(source_position, domain_size-1)
-        super().__init__(self.message)
-        
-    def __str__(self):
-        return f'{self.message}'
-    
-class InvalidSourceWave(Exception):
-    """
-    Exception raised when the source  wave type is not known
-   
-    """    
-   
-    def __init__(self):
-        self.message = "Unknown wave type: Source wave should be Wave.GAUSSIAN or Wave.SINE"
-        super().__init__(self.message)
-        
-    def __str__(self):
-        return f'{self.message}'    
-    
 
 class FDTD1:
     
