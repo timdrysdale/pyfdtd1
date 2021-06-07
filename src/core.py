@@ -173,12 +173,12 @@ class FDTD1:
         
         cc = self.field_normalisation
         
-        for n in range(2,self.N):
+        for n in range(1,self.N):
             self.Ez[n] = self.Ez[n] + cc * (self.Hy[n-1]-self.Hy[n])
             
         self.update_source()   
         
-        for n in range(1,self.N-1):
+        for n in range(0,self.N-1):
             self.Hy[n] = self.Hy[n] + cc * (self.Ez[n]-self.Ez[n+1])       
 
         
