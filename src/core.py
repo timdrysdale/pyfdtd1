@@ -39,10 +39,17 @@ class FDTD1:
                  source_type = Source.SOFT,
                  source_wave = Wave.GAUSSIAN,
                  boundary_type = Boundary.MUR,
+                 allow_bad_Mur = False,
                  Z = (1./(epsilon_0 * speed_of_light))):
         
+        
         if boundary_type == Boundary.MUR and Courant_factor != 0.5:
-            raise ValueError("For Mur boundary, courant must be set to default 0.5, not %f"%Courant_factor)
+            if allow_bad_Mur:
+                print("You are using the wrong courant factor")
+            else:    
+                raise ValueError("For Mur boundary, courant must be set to default 0.5, not %f"%Courant_factor)
+            
+                
         self.boundary_type = boundary_type
         self.courant = Courant_factor
         self.init_boundaries()
@@ -288,3 +295,27 @@ if __name__ == "__main__":
     fig = plt.gcf()
     fig.set_size_inches(5, 10)
     fig.savefig('../img/mur_gaussian_soft.png', dpi=100)
+    
+    demo = FDTD1(0.1,100,50, 
+                 source_wave = Wave.GAUSSIAN, 
+                 source_type = Source.SOFT, 
+                 boundary_type = Boundary.MUR,
+                 Courant_factor = 1,
+                 allow_bad_Mur = True) 
+    source = []
+    plt.figure()
+    offset = 0
+    for n in range(400):
+        demo.iterate()
+        if n%10==0:
+            plt.plot(demo.Ez + offset)
+            offset = offset + 1
+   
+    plt.xlabel('Position (1/dx)')     
+    plt.ylabel('E-field amplitude (V)')
+    plt.title('Soft Gaussian source in (bad!) Mur bounded domain')   
+    fig = plt.gcf()
+    fig.set_size_inches(5, 10)
+    fig.savefig('../img/mur_gaussian_soft_bad_courant.png', dpi=100)
+       
+    
