@@ -52,7 +52,6 @@ class FDTD1:
         self.source_field = source_field
         
         if (source_position < 1) or (source_position >= N):
-            raise SourcePositionNotValid(source_position, N)
             raise ValueError("source position %d is outside the valid positions of [1:(N-1)] i.e. [1:%d]"%(source_position,N-1))
         
         self.source_position = source_position
