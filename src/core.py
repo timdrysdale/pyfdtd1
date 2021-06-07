@@ -196,7 +196,7 @@ class FDTD1:
             self.Ez[0] = self.MurE0previous
             self.MurE0previous = self.Ez[1]
             self.Ez[-1] = self.MurENprevious
-            self.MurENprevious = self.Ez[-1]
+            self.MurENprevious = self.Ez[-2]
    
     def get_dt(self, courant, dx):
         return courant * dx / speed_of_light
