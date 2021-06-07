@@ -18,16 +18,15 @@ class Source(Enum):
 
 class Wave(Enum):
     SINE = 0
-    GAUSSIAN = 0
+    GAUSSIAN = 1
     
 class Field(Enum):
     ELECTRIC = 0
-    MAGNETIC = 0
+    MAGNETIC = 1
     
 class Boundary(Enum):
-    MUR=0
     BARE=0
-
+    MUR=1
 
 class FDTD1:
     
@@ -35,14 +34,20 @@ class FDTD1:
                  dx,
                  N,
                  source_position,
-                 courant = 0.5, 
+                 Courant_factor = 0.5, 
                  source_field = Field.ELECTRIC,
                  source_type = Source.SOFT,
                  source_wave = Wave.GAUSSIAN,
                  boundary_type = Boundary.MUR,
                  Z = (1./(epsilon_0 * speed_of_light))):
+        
+        if boundary_type == Boundary.MUR and Courant_factor != 0.5:
+            raise ValueError("For Mur boundary, courant must be set to default 0.5, not %f"%Courant_factor)
         self.boundary_type = boundary_type
-        self.courant = courant
+        self.courant = Courant_factor
+        self.init_boundaries()
+        
+        self.N = N
         self.init_fields(N)
         self.dx = dx
         self.dt = self.get_dt(self.courant, self.dx)
@@ -55,7 +60,7 @@ class FDTD1:
             raise ValueError("source position %d is outside the valid positions of [1:(N-1)] i.e. [1:%d]"%(source_position,N-1))
         
         self.source_position = source_position
-        if not (source_type == Wave.GAUSSIAN or source_type == Wave.SINE):
+        if not (source_wave == Wave.GAUSSIAN or source_wave == Wave.SINE):
             raise TypeError("Unknown wave type: Source wave should be Wave.GAUSSIAN or Wave.SINE")
         
         self.source_type = source_type
@@ -63,8 +68,6 @@ class FDTD1:
         self.source_value = 0
         self.init_source()
         self.init_update_fields()
-        
-        
         
                 
     def hard_electric(self, n, E):
@@ -83,7 +86,7 @@ class FDTD1:
         self.gaussian_width = pulse_width
         self.gaussian_value = 0
             
-    def init_sine(self, omega = 20, magnitude = 1):
+    def init_sine(self, omega, magnitude = 1):
         self.sine_omega = omega
         self.sine_magnitude = magnitude
         self.sine_value = 0
@@ -95,7 +98,7 @@ class FDTD1:
             self.init_gaussian()
             
         if self.source_wave == Wave.SINE:    
-            self.init_sine()
+            self.init_sine(0.3/self.dt)
         
     def update_gaussian(self):
        """
@@ -103,7 +106,7 @@ class FDTD1:
        Gaussian source, and store it for a source update routine to use
        """
        arg = ((self.time_step-self.gaussian_delay)/self.gaussian_width)**2
-       self.gaussian_value = exp(arg)
+       self.gaussian_value = exp(-arg)
    
     def update_sine(self):
         """
@@ -112,7 +115,7 @@ class FDTD1:
         then the source is
         sin(omega * m * dt) 
         """
-        sine = sin(self.omega * self.dt * self.time_step)
+        sine = sin(self.sine_omega * self.dt * self.time_step)
         self.sine_value = self.sine_magnitude * sine
         
      
@@ -123,12 +126,12 @@ class FDTD1:
         if self.source_wave == Wave.GAUSSIAN:
             self.update_gaussian()
             self.source_value = self.gaussian_value
-            
+              
         if self.source_wave == Wave.SINE:    
             self.update_sine() 
             self.source_value = self.sine_value
             
-        if self.source_field == Field.Electric:
+        if self.source_field == Field.ELECTRIC:
             
             if self.source_type == Source.HARD:
                 
@@ -139,7 +142,7 @@ class FDTD1:
                 self.Ez[self.source_position] = self.Ez[self.source_position] + self.source_value
             
                        
-        if self.source_field== Field.Magnetic:
+        if self.source_field== Field.MAGNETIC:
             
             if self.source_type == Source.HARD:
                 
@@ -167,22 +170,100 @@ class FDTD1:
         self.field_normalisation = 1/(mu_0 * epsilon_0)**0.5 * self.dt / self.dx
         
     def update_fields(self):
-        h_gradient = self.Hy[0:-2] - self.Hy[1:-1]
-        self.Ez[1:] = self.Ez[1:]  + self.field_normalisation * h_gradient
-        e_gradient = self.Ez[0:-2] - self.Ez[1:-1]
-        self.Hy[0:-1] = self.Hy[0:-1] + self.field_normalisation * e_gradient
         
-    
+        cc = self.field_normalisation
+        
+        for n in range(2,self.N):
+            self.Ez[n] = self.Ez[n] + cc * (self.Hy[n-1]-self.Hy[n])
+            
+        self.update_source()   
+        
+        for n in range(1,self.N-1):
+            self.Hy[n] = self.Hy[n] + cc * (self.Ez[n]-self.Ez[n+1])       
+
+        
+    def init_boundaries(self):
+        if self.boundary_type == Boundary.BARE:
+            return #nothing to do
+        if self.boundary_type == Boundary.MUR:
+            self.MurE0previous = 0
+            self.MurENprevious = 0
+            
     def update_boundaries(self):
         if self.boundary_type == Boundary.BARE:
             return #nothing to do
         if self.boundary_type == Boundary.MUR:
-            print("boundary not implemented yet")
-            pass
-            
-      
+            self.Ez[0] = self.MurE0previous
+            self.MurE0previous = self.Ez[1]
+            self.Ez[-1] = self.MurENprevious
+            self.MurENprevious = self.Ez[-1]
    
     def get_dt(self, courant, dx):
         return courant * dx / speed_of_light
     
+    
+    def iterate(self):
+        self.time_step = self.time_step + 1
+        self.update_fields()
+        self.update_boundaries()
+        
+    
+if __name__ == "__main__":
+    demo = FDTD1(0.1,50,25, source_wave = Wave.GAUSSIAN, source_type = Source.HARD, boundary_type = Boundary.MUR) 
+    import matplotlib.pyplot as plt
+    source = []
+    for n in range(100):
+        demo.time_step = demo.time_step + 1
+        demo.update_source()
+        source.append(demo.source_value)
+    plt.figure()    
+    plt.plot(source)    
+    plt.xlabel('time step')     
+    plt.ylabel('E-field amplitude (V)')
+    plt.title('Gaussian source')
+    
+    demo = FDTD1(0.1,50,25, source_wave = Wave.SINE, source_type = Source.HARD, boundary_type = Boundary.MUR) 
+    import matplotlib.pyplot as plt
+    source = []
+    for n in range(100):
+        demo.time_step = demo.time_step + 1
+        demo.update_source()
+        source.append(demo.source_value)
+    plt.figure()    
+    plt.plot(source)    
+    plt.xlabel('time step')     
+    plt.ylabel('E-field amplitude (V)')
+    plt.title('Sine wave source')
+
+        
+    demo = FDTD1(0.1,100,50, source_wave = Wave.GAUSSIAN, source_type = Source.HARD, boundary_type = Boundary.BARE) 
+    import matplotlib.pyplot as plt
+    source = []
+    plt.figure()
+    offset = 0
+    for n in range(200):
+        demo.iterate()
+        if n%10==0:
+            plt.plot(demo.Ez + offset)
+            offset = offset + 1
+   
+    plt.xlabel('Position (1/dx)')     
+    plt.ylabel('E-field amplitude (V)')
+    plt.title('Gaussian wave in BARE bounded domain')
+      
+    
+    demo = FDTD1(0.1,100,50, source_wave = Wave.GAUSSIAN, source_type = Source.HARD, boundary_type = Boundary.MUR) 
+    import matplotlib.pyplot as plt
+    source = []
+    plt.figure()
+    offset = 0
+    for n in range(200):
+        demo.iterate()
+        if n%10==0:
+            plt.plot(demo.Ez + offset)
+            offset = offset + 1
+   
+    plt.xlabel('Position (1/dx)')     
+    plt.ylabel('E-field amplitude (V)')
+    plt.title('Gaussian wave in Mur bounded domain')   
     
