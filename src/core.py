@@ -210,36 +210,52 @@ class FDTD1:
     
 if __name__ == "__main__":
     
-    if (False):
-        demo = FDTD1(0.1,50,25, source_wave = Wave.GAUSSIAN, source_type = Source.HARD, boundary_type = Boundary.MUR) 
-        import matplotlib.pyplot as plt
-        source = []
-        for n in range(100):
-            demo.time_step = demo.time_step + 1
-            demo.update_source()
-            source.append(demo.source_value)
-        plt.figure()    
-        plt.plot(source)    
-        plt.xlabel('time step')     
-        plt.ylabel('E-field amplitude (V)')
-        plt.title('Gaussian source')
+    import matplotlib.pyplot as plt
+     
+    demo = FDTD1(0.1,50,25, source_wave = Wave.GAUSSIAN, source_type = Source.HARD, boundary_type = Boundary.MUR) 
+    source = []
+    for n in range(100):
+        demo.time_step = demo.time_step + 1
+        demo.update_source()
+        source.append(demo.source_value)
+    plt.figure()    
+    plt.plot(source)    
+    plt.xlabel('time step')     
+    plt.ylabel('E-field amplitude (V)')
+    plt.title('Gaussian source')
+    plt.savefig('../img/gaussian_source.png', dpi=100)
         
-        demo = FDTD1(0.1,50,25, source_wave = Wave.SINE, source_type = Source.HARD, boundary_type = Boundary.MUR) 
-        import matplotlib.pyplot as plt
-        source = []
-        for n in range(100):
-            demo.time_step = demo.time_step + 1
-            demo.update_source()
-            source.append(demo.source_value)
-        plt.figure()    
-        plt.plot(source)    
-        plt.xlabel('time step')     
-        plt.ylabel('E-field amplitude (V)')
-        plt.title('Sine wave source')
-
+    demo = FDTD1(0.1,50,25, source_wave = Wave.SINE, source_type = Source.HARD, boundary_type = Boundary.MUR) 
+    source = []
+    for n in range(100):
+        demo.time_step = demo.time_step + 1
+        demo.update_source()
+        source.append(demo.source_value)
+    plt.figure()    
+    plt.plot(source)    
+    plt.xlabel('time step')     
+    plt.ylabel('E-field amplitude (V)')
+    plt.title('Sine wave source')
+    plt.savefig('../img/sine_source.png', dpi=100)
         
+    demo = FDTD1(0.1,100,50, source_wave = Wave.GAUSSIAN, source_type = Source.SOFT, boundary_type = Boundary.BARE) 
+    source = []
+    plt.figure()
+    offset = 0
+    for n in range(400):
+        demo.iterate()
+        if n%10==0:
+            plt.plot(demo.Ez + offset)
+            offset = offset + 1
+   
+    plt.xlabel('Position (1/dx)')     
+    plt.ylabel('E-field amplitude (V)')
+    plt.title('Soft Gaussian source in bare bounded domain')
+    fig = plt.gcf()
+    fig.set_size_inches(5, 10)
+    fig.savefig('../img/bare_gaussian_soft.png', dpi=100)
+    
     demo = FDTD1(0.1,100,50, source_wave = Wave.GAUSSIAN, source_type = Source.HARD, boundary_type = Boundary.BARE) 
-    import matplotlib.pyplot as plt
     source = []
     plt.figure()
     offset = 0
@@ -251,13 +267,12 @@ if __name__ == "__main__":
    
     plt.xlabel('Position (1/dx)')     
     plt.ylabel('E-field amplitude (V)')
-    plt.title('Gaussian wave in bare bounded domain')
+    plt.title('Hard Gaussian source in bare bounded domain')
     fig = plt.gcf()
     fig.set_size_inches(5, 10)
-    fig.savefig('bare_gaussian.png', dpi=100)
+    fig.savefig('../img/bare_gaussian_hard.png', dpi=100)   
 
-    demo = FDTD1(0.1,100,50, source_wave = Wave.GAUSSIAN, source_type = Source.HARD, boundary_type = Boundary.MUR) 
-    import matplotlib.pyplot as plt
+    demo = FDTD1(0.1,100,50, source_wave = Wave.GAUSSIAN, source_type = Source.SOFT, boundary_type = Boundary.MUR) 
     source = []
     plt.figure()
     offset = 0
@@ -269,7 +284,7 @@ if __name__ == "__main__":
    
     plt.xlabel('Position (1/dx)')     
     plt.ylabel('E-field amplitude (V)')
-    plt.title('Gaussian wave in Mur bounded domain')   
+    plt.title('Soft Gaussian source in Mur bounded domain')   
     fig = plt.gcf()
     fig.set_size_inches(5, 10)
-    fig.savefig('mur_gaussian.png', dpi=100)
+    fig.savefig('../img/mur_gaussian_soft.png', dpi=100)
