@@ -159,7 +159,7 @@ class FDTD1:
                    Hy[0]       Hy[1]        ...
         """
         self.Ez = np.array(np.zeros(N), dtype=float)
-        self.Hy = np.array(np.zeros(N), dtype=float) 
+        self.Hy = np.array(np.zeros(N-1), dtype=float) 
            
     def init_update_fields(self):
         """
@@ -173,7 +173,7 @@ class FDTD1:
         
         cc = self.field_normalisation
         
-        for n in range(1,self.N):
+        for n in range(1,self.N-1):
             self.Ez[n] = self.Ez[n] + cc * (self.Hy[n-1]-self.Hy[n])
             
         self.update_source()   
