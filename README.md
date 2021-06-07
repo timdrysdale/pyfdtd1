@@ -117,7 +117,7 @@ A key requirement for the Mur Absorbing Boundary Condition implementation is tha
 
 <img src="https://render.githubusercontent.com/render/math?math=dt = \frac{0.5 dx}{c}">
 
-In this code, under default settings, the time step dt is automatically calculated to give a Courant factor of two, regardless of which boundary condition you select. To see what happens if you try different Courant factors, you can override the default `Courant_factor` and set the flag `allow_bad_Mur` to prevent the Mur boundary condition from raising an exception. 
+In this code, under default settings, the time step dt is automatically calculated to give a Courant factor of 0.5, regardless of which boundary condition you select. To see what happens if you try different Courant factors, you can override the default `Courant_factor` and set the flag `allow_bad_Mur` to prevent the Mur boundary condition from raising an exception. 
 
     demo = FDTD1(0.1,100,50, 
                  source_wave = Wave.GAUSSIAN, 
